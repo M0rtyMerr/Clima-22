@@ -21,30 +21,27 @@ struct WeatherManager {
         performRequest(with: urlString)
     }
     
-    func performRequest(with urlString:String) {
+    func performRequest(with urlString: String) {
         // 1. Create URL
-        if let url = URL(string: urlString) {
-            // 2. Create URLSession
-            let session = URLSession(configuration: .default)
-            // 3. Give URLSession a task (if you press Enter on auto-completion it reformats it into trailing Closure)
-            let task = session.dataTask(with: url) { data, response, error in
-                if error != nil {
-                    delegate?.didFailWithError(error: error!)
-                }
-                if let safeData = data {
-                    if let weather = parseJSON(safeData) {
-                        delegate?.didUpdateWeather(self, weather: weather)
-                    }
-                }
+        guard let url = URL(string: urlString) else { return }
+        // 2. Create URLSession
+        let session = URLSession(configuration: .default)
+        // 3. Give URLSession a task (if you press Enter on auto-completion it reformats it into trailing Closure)
+        let task = session.dataTask(with: url) { data, _, error in
+            if error != nil {
+                delegate?.didFailWithError(error: error!)
+            } else if let data = data, let weather = parseJSON(data) {
+                delegate?.didUpdateWeather(self, weather: weather)
             }
-            // 4. Start the task
-            task.resume()
         }
+        // 4. Start the task
+        task.resume()
     }
     
     func parseJSON(_ weatherData: Data) -> WeatherModel? {
         let decoder = JSONDecoder()
-        do { let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
+        do {
+            let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
             let id = decodedData.weather[0].id
             let temp = decodedData.main.temp
             let name = decodedData.name
